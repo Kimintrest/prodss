@@ -6,6 +6,8 @@ import threading
 from fastapi.middleware.cors import CORSMiddleware
 import json
 import debts_db
+import event_db
+from . import utils
 
 SECRET_KEY = "09d25e094faa****************f7099f6f0f4caa6cf63b88e8d3e7"
 
@@ -46,19 +48,30 @@ app = FastAPI()
 @app.post('/optimize_graph')
 async def save_item(request=Body()):
     event_id = request['event_id']
+    if event_db.get_admin_by_event_id(event_id) == event_id:
+        debts = debts_db.get_debts_by_event_fk(event_id)
+        o_debts = [(debt[2], debt[1], debt[3]) for debt in debts]
+        optimize_debts = utils.optimize(o_debts)
+        for del_debt in debts:
+            debts_db.delete_debt_by_id(del_debt[0])
+        for all_debt in optimize_debts:
+            debts_db.add_debt(all_debt[1], all_debt[0],all_debt[2], event_id)
 
-    debts_db.get_debts_by_event_fk()
+
+@app.post('/get_debtors')
+async def get_debtor(request=Body()):
+    user_id = request['user_id']
+    event_id = request['event_id']
+
+    return {'debtors': json.loads(debts_db.get_debts_by_user_id_event_id(user_id, event_id))}
 
 
-
-
-
-@app.post('/get_debitor')
+@app.post('/get_creditors')
 async def get_creditor(request=Body()):
+    user_id = request['user_id']
+    event_id = request['event_id']
 
-
-@app.post('/get_debitor')
-async def get_creditor(request=Body()):
+    return {'debtors': json.loads(debts_db.get_creditors_by_user_id_event_id(user_id, event_id))}
 
 
 @app.post('/reg')

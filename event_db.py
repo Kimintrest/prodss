@@ -30,4 +30,3 @@ def add_event(name, session_name, admin):
                    (name, session_name, admin))
     conn.commit()
     conn.close()
-z
