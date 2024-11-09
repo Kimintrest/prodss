@@ -13,7 +13,7 @@ def create_users_db():
     conn.close()
 
 
-def user_register(username, jwt_token, phone_number, card_number=None):
+def user_register(username, phone_number, card_number=None):
     conn = sqlite3.connect(users_db)
     cursor = conn.cursor()
     try:

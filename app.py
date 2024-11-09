@@ -17,7 +17,7 @@ ALGORITHM = "HS256"
 
 # Pydantic Model that will be used in the
 # token endpoint for the response
-class Token(BaseModel):
+class Token():
     access_token: str
     token_type: str
 
@@ -58,6 +58,13 @@ async def save_item(request=Body()):
             debts_db.add_debt(all_debt[1], all_debt[0],all_debt[2], event_id)
 
 
+@app.post('/get_event_by_uniquecode')
+async def get_object_of_event(request=Body()):
+    unique_code = request["unique_code"]
+    return json.loads(event_db.get_event_by_uniquecode(unique_code))
+
+
+
 @app.post('/get_debtors')
 async def get_debtor(request=Body()):
     user_id = request['user_id']
@@ -85,11 +92,5 @@ async def save_item(request=Body()):
 
 
 
-
-
-
-
-
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=5000)
-
