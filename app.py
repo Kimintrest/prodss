@@ -135,13 +135,6 @@ async def create_transfer(request=Body()):
 
 
 
-@app.post('/reg')
-async def reg(request=Body()):
-
-
-
-
-
 
 
 
