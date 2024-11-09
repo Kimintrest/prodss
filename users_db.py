@@ -44,11 +44,19 @@ def add_event(user_id):
     conn = sqlite3.connect(users_db)
     cursor = conn.cursor()
     cursor.execute('''UPDATE event SET event_list = ? WHERE user_id = ?''', (event_list, user_id))
+    q = cursor.fetchone()
     conn.commit()
     conn.close()
-    
+    return q    
         
-    
+def take_id_by_phonenumber(phonenumber):
+    conn = sqlite3.connect(phonenumber)
+    cursor = conn.cursor()
+    cursor.execute('''SELECT id FROM Events WHERE users_id = ?''', (phonenumber))
+    q = cursor.fetchone()
+    conn.commit()
+    conn.close()
+    return q
     
 
 def user_login(phonenumber):

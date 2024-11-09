@@ -11,7 +11,6 @@ def create_event_db():
                         event_id INTEGER PRIMARY KEY AUTOINCREMENT,
                         name TEXT NOT NULL,
                         time_created TEXT DEFAULT CURRENT_TIMESTAMP,
-                        session_name TEXT,
                         status INTEGER DEFAULT 0,
                         admin INTEGER NOT NULL,
                         unique_code NOT NULL,
@@ -28,11 +27,11 @@ def get_admin_by_event_id(event_id):
     conn.close()
     return admin[0] if admin else None
 
-def add_event(name, session_name, admin):
+def add_event(name, admin):
     conn = sqlite3.connect(event_db)
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO event (name, session_name, admin, unique_code) VALUES (?, ?, ?, ?)",
-                   (name, session_name, admin, int(random.choices(string.digits, k=6))))
+    cursor.execute("INSERT INTO event (name, admin, unique_code) VALUES (?, ?, ?, ?)",
+                   (name, admin, int(random.choices(string.digits, k=6))))
     conn.commit()
     conn.close()
 

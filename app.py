@@ -9,6 +9,7 @@ import debts_db
 import event_db
 from . import utils
 import users_db
+import event_db
 
 SECRET_KEY = "09d25e094faa****************f7099f6f0f4caa6cf63b88e8d3e7"
 
@@ -63,6 +64,16 @@ async def login(request=Body()):
         users_db.users_login(phonenumber)
     except Exception:
         return "Такой пользователь уже существует"
+
+
+@app.post("/get_id_by_phonenumber")
+async def get_id(request=Body()):
+    phonenumber = request["phonenumber"]
+    try:
+        q =  users_db.take_id_by_phonenumber(phonenumber)
+        return q
+    except Exception:
+        return "Что-то пошло не так"
         
 
 
@@ -88,6 +99,14 @@ async def get_object_of_event(request=Body()):
             "unique_code": lst[6], "users_list": lst[7]}
         
 
+@app.post("/create_event")
+async def creation_of_event(request=Body()):
+    name = request["name"]
+    user_id = request["user_id"]
+    event_db.create_event_db(name, user_id)
+    return "Вы успешно создали событие"
+    
+
 
 
 @app.post('/get_debtors')
@@ -104,17 +123,6 @@ async def get_creditor(request=Body()):
     event_id = request['event_id']
 
     return {'debtors': json.loads(debts_db.get_creditors_by_user_id_event_id(user_id, event_id))}
-
-
-@app.post('/reg')
-async def reg(request=Body()):
-
-
-
-
-@app.post('/create_session')
-async def save_item(request=Body()):
-
 
 
 if __name__ == "__main__":
