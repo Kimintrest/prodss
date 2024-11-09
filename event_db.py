@@ -10,7 +10,6 @@ def create_event_db():
     cursor.execute('''CREATE TABLE IF NOT EXISTS event (
                         event_id INTEGER PRIMARY KEY AUTOINCREMENT,
                         name TEXT NOT NULL,
-                        time_created TEXT DEFAULT CURRENT_TIMESTAMP,
                         status INTEGER DEFAULT 0,
                         admin INTEGER NOT NULL,
                         unique_code INTEGER NOT NULL UNIQUE,
