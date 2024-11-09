@@ -7,7 +7,7 @@ def create_users_db():
     cursor.execute('''CREATE TABLE IF NOT EXISTS users (
                         users_id INTEGER PRIMARY KEY AUTOINCREMENT,
                         username TEXT NOT NULL UNIQUE,
-                        phone_number NOT NULL,
+                        phone_number NOT NULL UNIQUE,
                         card_number DEFAULT NULL,
                         event_list TEXT
                      )''')
@@ -51,13 +51,16 @@ def add_event(user_id):
     
     
 
-def user_login(username):
+def user_login(phonenumber):
     conn = sqlite3.connect(users_db)
     cursor = conn.cursor()
     try:
-        cursor.execute('''SELECT username FROM users WHERE username = ?''', (username))
+        cursor.execute('''SELECT phone_number FROM users WHERE phone_number = ?''', (phonenumber))
+        conn.close()
+        return True
     except Exception:
-        return "Пользователь с таким ником уже существует"
-    conn.close()
+        conn.close()
+        return "Пользователя с таким никнеймом не существует"
+    
 
 create_users_db()

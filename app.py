@@ -8,6 +8,7 @@ import json
 import debts_db
 import event_db
 from . import utils
+import users_db
 
 SECRET_KEY = "09d25e094faa****************f7099f6f0f4caa6cf63b88e8d3e7"
 
@@ -44,6 +45,26 @@ app = FastAPI()
 # return JSONResponse({'error': 'Данные не были сохранены, повторите отправку'}, status_code=404)
 #
 
+@app.post("/register")
+async def register(request=Body()):
+    username = request["username"]
+    phonenumber = request["phonenumber"]
+    cardnumber = request["cardnumber"]
+    try:
+        users_db.user_register(username, phonenumber, cardnumber)
+    except Exception:
+        return "Такой пользователь уже существует или что-то пошло не так"
+
+
+@app.post("/login")
+async def login(request=Body()):
+    phonenumber = request["phonenumber"]
+    try:
+        users_db.users_login(phonenumber)
+    except Exception:
+        return "Такой пользователь уже существует"
+        
+
 
 @app.post('/optimize_graph')
 async def save_item(request=Body()):
@@ -61,7 +82,11 @@ async def save_item(request=Body()):
 @app.post('/get_event_by_uniquecode')
 async def get_object_of_event(request=Body()):
     unique_code = request["unique_code"]
-    return json.loads(event_db.get_event_by_uniquecode(unique_code))
+    lst = list(event_db.get_event_by_uniquecode(unique_code))
+    return {"event_id": lst[0], "name": lst[1], "time_created": lst[2],
+            "session_name": lst[3], "status": lst[4], "admin": lst[5],
+            "unique_code": lst[6], "users_list": lst[7]}
+        
 
 
 
