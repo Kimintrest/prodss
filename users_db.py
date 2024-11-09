@@ -7,7 +7,7 @@ def create_users_db():
     cursor.execute('''CREATE TABLE IF NOT EXISTS users (
                         users_id INTEGER PRIMARY KEY AUTOINCREMENT,
                         username TEXT NOT NULL UNIQUE,
-                        phone_number NOT NULL UNIQUE,
+                        phone_number NOT NULL,
                         card_number DEFAULT NULL,
                         event_list TEXT
                      )''')
@@ -27,7 +27,7 @@ def user_register(username, phone_number, card_number=None):
         print(f"Error: {e}")
     finally:
         conn.close()
-        
+
 
 
 def get_event_list(user_id):
@@ -37,38 +37,32 @@ def get_event_list(user_id):
     event_list = cursor.fetchone()
     conn.close()
     return event_list
-        
-        
-def add_event(user_id):
-    event_list = json.dumps(get_event_list(user_id))
+
+
+def add_event(user_id, new_event):
+
+    event_list = json.loads(get_event_list(user_id))
+    event_list.append(new_event)
+
     conn = sqlite3.connect(users_db)
     cursor = conn.cursor()
     cursor.execute('''UPDATE event SET event_list = ? WHERE user_id = ?''', (event_list, user_id))
-    q = cursor.fetchone()
     conn.commit()
     conn.close()
-    return q    
-        
-def take_id_by_phonenumber(phonenumber):
-    conn = sqlite3.connect(phonenumber)
-    cursor = conn.cursor()
-    cursor.execute('''SELECT id FROM Events WHERE users_id = ?''', (phonenumber))
-    q = cursor.fetchone()
-    conn.commit()
-    conn.close()
-    return q
-    
 
-def user_login(phonenumber):
+create_users_db()
+
+
+
+
+
+def user_login(username):
     conn = sqlite3.connect(users_db)
     cursor = conn.cursor()
     try:
-        cursor.execute('''SELECT phone_number FROM users WHERE phone_number = ?''', (phonenumber))
-        conn.close()
-        return True
+        cursor.execute('''SELECT username FROM users WHERE username = ?''', (username))
     except Exception:
-        conn.close()
-        return "Пользователя с таким никнеймом не существует"
-    
+        return "Пользователь с таким ником уже существует"
+    conn.close()
 
 create_users_db()

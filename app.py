@@ -6,22 +6,10 @@ import threading
 from fastapi.middleware.cors import CORSMiddleware
 import json
 import debts_db
-import event_db
-from . import utils
 import users_db
 import event_db
+from . import utils
 
-SECRET_KEY = "09d25e094faa****************f7099f6f0f4caa6cf63b88e8d3e7"
-
-# encryption algorithm
-ALGORITHM = "HS256"
-
-
-# Pydantic Model that will be used in the
-# token endpoint for the response
-class Token():
-    access_token: str
-    token_type: str
 
 
 # Initialise the app
@@ -46,36 +34,6 @@ app = FastAPI()
 # return JSONResponse({'error': 'Данные не были сохранены, повторите отправку'}, status_code=404)
 #
 
-@app.post("/register")
-async def register(request=Body()):
-    username = request["username"]
-    phonenumber = request["phonenumber"]
-    cardnumber = request["cardnumber"]
-    try:
-        users_db.user_register(username, phonenumber, cardnumber)
-    except Exception:
-        return "Такой пользователь уже существует или что-то пошло не так"
-
-
-@app.post("/login")
-async def login(request=Body()):
-    phonenumber = request["phonenumber"]
-    try:
-        users_db.users_login(phonenumber)
-    except Exception:
-        return "Такой пользователь уже существует"
-
-
-@app.post("/get_id_by_phonenumber")
-async def get_id(request=Body()):
-    phonenumber = request["phonenumber"]
-    try:
-        q =  users_db.take_id_by_phonenumber(phonenumber)
-        return q
-    except Exception:
-        return "Что-то пошло не так"
-        
-
 
 @app.post('/optimize_graph')
 async def save_item(request=Body()):
@@ -88,24 +46,7 @@ async def save_item(request=Body()):
             debts_db.delete_debt_by_id(del_debt[0])
         for all_debt in optimize_debts:
             debts_db.add_debt(all_debt[1], all_debt[0],all_debt[2], event_id)
-
-
-@app.post('/get_event_by_uniquecode')
-async def get_object_of_event(request=Body()):
-    unique_code = request["unique_code"]
-    lst = list(event_db.get_event_by_uniquecode(unique_code))
-    return {"event_id": lst[0], "name": lst[1], "time_created": lst[2],
-            "session_name": lst[3], "status": lst[4], "admin": lst[5],
-            "unique_code": lst[6], "users_list": lst[7]}
-        
-
-@app.post("/create_event")
-async def creation_of_event(request=Body()):
-    name = request["name"]
-    user_id = request["user_id"]
-    event_db.create_event_db(name, user_id)
-    return "Вы успешно создали событие"
-    
+        event_db.update_event_status_by_uniquecode(event_id, 1)
 
 
 
@@ -125,5 +66,57 @@ async def get_creditor(request=Body()):
     return {'debtors': json.loads(debts_db.get_creditors_by_user_id_event_id(user_id, event_id))}
 
 
+@app.post('/get_event_by_uniquecode')
+async def get_object_of_event(request=Body()):
+    unique_code = request["unique_code"]
+    lst = list(event_db.get_event_by_uniquecode(unique_code))
+    return {"event_id": lst[0], "name": lst[1], "time_created": lst[2],
+            "session_name": lst[3], "status": lst[4], "admin": lst[5],
+            "unique_code": lst[6], "users_list": lst[7]}
+
+
+@app.post('/get_event_list')
+async def get_event_list(request=Body()):
+    user_id = request['user_id']
+    return {'events': users_db.get_event_list(user_id)}
+
+
+@app.post('/add_event')
+async def add_event(request=Body()):
+    user_id = request['user_id']
+    unique_code = request['unique_code']
+
+    users_db.add_event(user_id, unique_code)
+
+
+@app.post('/create_transfer')
+async def create_transfer(request=Body()):
+    creditor_id = request['creditor_id']
+    debtor_id = request['debtor_id']
+    amount = request['amount']
+    event_id = request['event_id']
+    debts_db.add_debt(debtor_id, creditor_id, amount, event_id)
+
+
+
+
+
+@app.post('/reg')
+async def reg(request=Body()):
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=5000)
+

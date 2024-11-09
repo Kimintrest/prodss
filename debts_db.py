@@ -1,6 +1,7 @@
-
 import sqlite3
 from loaderof_db import debts_db
+
+
 
 def create_debts_db():
     conn = sqlite3.connect(debts_db)
@@ -15,6 +16,7 @@ def create_debts_db():
                      )''')
     conn.commit()
     conn.close()
+
 
 def delete_debt_by_id(debt_id):
     conn = sqlite3.connect(debts_db)
@@ -57,3 +59,5 @@ def get_creditors_by_user_id_event_id(user_id, event_id):
     debtor = cursor.fetchall()
     conn.close()
     return debtor
+
+create_debts_db()
