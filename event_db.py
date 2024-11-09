@@ -45,12 +45,11 @@ def code_exists(unique_code):
     return exists
 
 
-def add_event(name, session_name, admin):
+def add_event(name, admin):
     conn = sqlite3.connect(event_db)
     cursor = conn.cursor()
-    unique_code = generate_unique_code()  # Генерация уникального кода
-    cursor.execute("INSERT INTO event (name, session_name, admin, unique_code) VALUES (?, ?, ?, ?)",
-                   (name, session_name, admin, unique_code))
+    cursor.execute("INSERT INTO event (name, admin, unique_code) VALUES (?, ?, ?, ?)",
+                   (name, admin, int(random.choices(string.digits, k=6))))
     conn.commit()
     conn.close()
 
