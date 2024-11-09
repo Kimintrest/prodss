@@ -9,4 +9,5 @@ def create_event_db():
                         time_created TEXT DEFAULT CURRENT_TIMESTAMP,
                         session_name STRING,
                         status INTEGER DEFAULT 0
+                        admin INTEGER NOT NULL
                      )''')

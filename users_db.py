@@ -26,4 +26,13 @@ def user_register(username, jwt_token, phone_number, card_number=None):
     finally:
         conn.close()
 
+def user_login(username):
+    conn = sqlite3.connect(users_db)
+    cursor = conn.cursor()
+    try:
+        cursor.execute('''SELECT username FROM Users WHERE username = ?''', (username))
+    except Exception:
+        return "Пользователь с таким ником уже существует"
+    conn.close()
+
 create_users_db()

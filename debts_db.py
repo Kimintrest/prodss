@@ -25,6 +25,9 @@ def delete_by_id(event_id):
     try:   
         cursor.execute("DELETE FROM Debts WHERE debt_id = ?", (event_id))
         conn.commit()
-    except  
+    except Exception:
+        return "Что-то пошло не так" 
+
+  
 
         
