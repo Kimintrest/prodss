@@ -116,6 +116,13 @@ async def add_event(request=Body()):
     users_db.add_event(user_id, unique_code)
 
 
+@app.post("/create_event")
+async def creation_of_event(request=Body()):
+    name = request["name"]
+    user_id = request["user_id"]
+    event_db.create_event_db(name, user_id)
+    return "Вы успешно создали событие"
+
 @app.post('/create_transfer')
 async def create_transfer(request=Body()):
     creditor_id = request['creditor_id']
