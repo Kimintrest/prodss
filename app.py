@@ -28,7 +28,34 @@ app = FastAPI()
 #
 #     # return the generated token
 #     return encoded_jwt
+@app.post("/register")
+async def register(request=Body()):
+    username = request["username"]
+    phonenumber = request["phonenumber"]
+    cardnumber = request["cardnumber"]
+    try:
+        users_db.user_register(username, phonenumber, cardnumber)
+    except Exception:
+        return "Такой пользователь уже существует или что-то пошло не так"
 
+
+@app.post("/login")
+async def login(request=Body()):
+    phonenumber = request["phonenumber"]
+    try:
+        users_db.users_login(phonenumber)
+    except Exception:
+        return "Такой пользователь уже существует"
+
+
+@app.post("/get_id_by_phonenumber")
+async def get_id(request=Body()):
+    phonenumber = request["phonenumber"]
+    try:
+        q =  users_db.take_id_by_phonenumber(phonenumber)
+        return q
+    except Exception:
+        return "Что-то пошло не так"
 
 # return JSONResponse({'message': 'Товар сохранен'}, status_code=200)
 # return JSONResponse({'error': 'Данные не были сохранены, повторите отправку'}, status_code=404)
