@@ -123,17 +123,9 @@ async def create_transfer(request=Body()):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 if __name__ == "__main__":
+    users_db.create_users_db()
+    debts_db.create_debts_db()
+    event_db.create_event_db()
     uvicorn.run(app, host="0.0.0.0", port=5000)
 
