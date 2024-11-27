@@ -1,5 +1,13 @@
 from collections import defaultdict
+import firebase_admin
+from firebase_admin import credentials, firestore
 
+# Инициализация Firebase
+cred = credentials.Certificate("splitpaysplitergroup-firebase-adminsdk-fp08h-3551a8a3cb.json")
+firebase_admin.initialize_app(cred)
+
+# Инициализация Firestore
+db = firestore.client()
 
 def optimize(debts):
     # Словарь для учета чистых балансов
@@ -36,4 +44,30 @@ def optimize(debts):
         if creditors[j][1] == 0:
             j += 1
 
+    # Отправка транзакций в Firestore
+    save_transactions_to_firebase(transactions)
+    
     return transactions
+
+def save_transactions_to_firebase(transactions):
+    try:
+        for debtor, creditor, amount in transactions:
+            transaction_data = {
+                "debtor": debtor,
+                "creditor": creditor,
+                "amount": amount
+            }
+            db.collection('transactions').add(transaction_data)
+        print("Transactions saved to Firebase successfully.")
+    except Exception as e:
+        print(f"Error saving transactions to Firebase: {e}")
+
+# Пример использования функции optimize
+debts = [
+    ("Alice", "Bob", 50),
+    ("Bob", "Charlie", 30),
+    ("Charlie", "Alice", 20),
+]
+
+optimized_transactions = optimize(debts)
+print("Optimized Transactions:", optimized_transactions)

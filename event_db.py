@@ -1,91 +1,64 @@
-import random
-import sqlite3
-from loaderof_db import event_db
-import json
+import firebase_admin
+from firebase_admin import credentials, firestore
 
+# Инициализация Firebase
+cred = credentials.Certificate("splitpaysplitergroup-firebase-adminsdk-fp08h-3551a8a3cb.json")
+firebase_admin.initialize_app(cred)
 
-def create_event_db():
-    conn = sqlite3.connect(event_db)
-    cursor = conn.cursor()
-    cursor.execute('''CREATE TABLE IF NOT EXISTS event (
-                        event_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        name TEXT NOT NULL,
-                        status INTEGER DEFAULT 0,
-                        admin INTEGER NOT NULL,
-                        unique_code INTEGER NOT NULL UNIQUE,
-                        users_list TEXT
-                     )''')
-    conn.commit()
-    conn.close()
+# Инициализация Firestore
+db = firestore.client()
 
+def create_debts_collection():
+    # Firestore автоматически создает коллекцию при добавлении документа, 
+    # поэтому здесь нет необходимости явно создавать коллекцию.
+    pass
 
-def get_admin_by_event_id(event_id):
-    conn = sqlite3.connect(event_db)
-    cursor = conn.cursor()
-    cursor.execute("SELECT admin FROM event WHERE event_id = ?", (event_id,))
-    admin = cursor.fetchone()
-    conn.close()
-    return admin[0] if admin else None
+def delete_debt_by_id(debt_id):
+    try:
+        db.collection('debts').document(debt_id).delete()
+        print(f"Долг с ID {debt_id} успешно удален.")
+    except Exception as e:
+        print(f"Ошибка при удалении долга: {str(e)}")
 
+def add_debt(debtor_id, creditor_id, amount, event_fk, is_payed=0):
+    try:
+        debt_data = {
+            'debtor_id': debtor_id,
+            'creditor_id': creditor_id,
+            'amount': amount,
+            'is_payed': is_payed,
+            'event_fk': event_fk
+        }
+        db.collection('debts').add(debt_data)
+        print("Долг успешно добавлен.")
+    except Exception as e:
+        print(f"Ошибка при добавлении долга: {str(e)}")
 
-def generate_unique_code():
-    while True:
-        unique_code = random.randint(100000, 9999999)  # Генерация 6-значного числа
-        if not code_exists(unique_code):
-            return unique_code
+def get_debts_by_event_fk(event_id):
+    try:
+        debts_ref = db.collection('debts').where('event_fk', '==', event_id).stream()
+        debts = [debt.to_dict() for debt in debts_ref]
+        return debts
+    except Exception as e:
+        print(f"Ошибка при получении долгов: {str(e)}")
+        return []
 
+def get_debts_by_user_id_event_id(user_id, event_id):
+    try:
+        debts_ref = db.collection('debts').where('event_fk', '==', event_id).where('debtor_id', '==', user_id).stream()
+        debtor = [debt.to_dict() for debt in debts_ref]
+        return debtor
+    except Exception as e:
+        print(f"Ошибка при получении долгов по пользователю: {str(e)}")
+        return []
 
-def code_exists(unique_code):
-    conn = sqlite3.connect(event_db)
-    cursor = conn.cursor()
-    cursor.execute("SELECT 1 FROM event WHERE unique_code = ?", (unique_code,))
-    exists = cursor.fetchone() is not None
-    conn.close()
-    return exists
+def get_creditors_by_user_id_event_id(user_id, event_id):
+    try:
+        creditors_ref = db.collection('debts').where('event_fk', '==', event_id).where('creditor_id', '==', user_id).stream()
+        creditor = [debt.to_dict() for debt in creditors_ref]
+        return creditor
+    except Exception as e:
+        print(f"Ошибка при получении кредиторов: {str(e)}")
+        return []
 
-
-def add_event(name, admin):
-    conn = sqlite3.connect(event_db)
-    cursor = conn.cursor()
-    cursor.execute("INSERT INTO event (name, admin, unique_code) VALUES (?, ?, ?, ?)",
-                   (name, admin, int(random.choices(string.digits, k=6))))
-    conn.commit()
-    conn.close()
-
-
-def get_event_by_uniquecode(unique_code):
-    conn = sqlite3.connect(event_db)
-    cursor = conn.cursor()
-    cursor.execute('''SELECT * FROM event WHERE unique_code = ?''', (unique_code,))
-    parameters = cursor.fetchone()
-    conn.close()
-    return parameters
-
-
-def add_user_by_event_uniquecode(user_id, users_uniqode):
-    conn = sqlite3.connect(event_db)
-    cursor = conn.cursor()
-    cursor.execute('''SELECT users_list FROM event WHERE unique_code = ?''', (users_uniqode,))
-    lst = cursor.fetchone()
-
-    if lst and lst[0]:
-        tsl = json.loads(lst[0])
-    else:
-        tsl = []
-
-    tsl.append(user_id)
-
-    new_users_list = json.dumps(tsl)
-    cursor.execute('''UPDATE event SET users_list = ? WHERE unique_code = ?''', (new_users_list, users_uniqode))
-    conn.commit()
-    conn.close()
-
-
-def update_event_status_by_uniquecode(event_id, new_status):
-    conn = sqlite3.connect(event_db)
-    cursor = conn.cursor()
-    cursor.execute('''UPDATE event SET status = ? WHERE event_id = ?''', (new_status, event_id))
-    conn.commit()
-    conn.close()
-
-create_event_db()
+create_debts_collection()

@@ -1,63 +1,64 @@
-import sqlite3
-from loaderof_db import debts_db
+import firebase_admin
+from firebase_admin import credentials, firestore
 
+# Инициализация Firebase
+cred = credentials.Certificate("splitpaysplitergroup-firebase-adminsdk-fp08h-3551a8a3cb.json")
+firebase_admin.initialize_app(cred)
 
+# Инициализация Firestore
+db = firestore.client()
 
-def create_debts_db():
-    conn = sqlite3.connect(debts_db)
-    cursor = conn.cursor()
-    cursor.execute('''CREATE TABLE IF NOT EXISTS debts (
-                        debt_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        debtor_id INTEGER,
-                        creditor_id INTEGER,
-                        amount REAL NOT NULL,
-                        is_payed BOOLEAN DEFAULT 0,
-                        event_fk INTEGER
-                     )''')
-    conn.commit()
-    conn.close()
-
+def create_debts_collection():
+    # Firestore автоматически создает коллекцию при добавлении документа, 
+    # поэтому здесь нет необходимости явно создавать коллекцию.
+    pass
 
 def delete_debt_by_id(debt_id):
-    conn = sqlite3.connect(debts_db)
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM debts WHERE debt_id = ?", (debt_id,))
-    conn.commit()
-    conn.close()
+    try:
+        db.collection('debts').document(debt_id).delete()
+        print(f"Долг с ID {debt_id} успешно удален.")
+    except Exception as e:
+        print(f"Ошибка при удалении долга: {str(e)}")
 
 def add_debt(debtor_id, creditor_id, amount, event_fk, is_payed=0):
-    conn = sqlite3.connect(debts_db)
-    cursor = conn.cursor()
-    cursor.execute("INSERT INTO debts (debtor_id, creditor_id, amount, is_payed, event_fk) VALUES (?, ?, ?, ?, ?)",
-                   (debtor_id, creditor_id, amount, is_payed, event_fk))
-    conn.commit()
-    conn.close()
+    try:
+        debt_data = {
+            'debtor_id': debtor_id,
+            'creditor_id': creditor_id,
+            'amount': amount,
+            'is_payed': is_payed,
+            'event_fk': event_fk
+        }
+        db.collection('debts').add(debt_data)
+        print("Долг успешно добавлен.")
+    except Exception as e:
+        print(f"Ошибка при добавлении долга: {str(e)}")
 
 def get_debts_by_event_fk(event_id):
-    conn = sqlite3.connect(debts_db)
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM debts WHERE event_fk = ?", (event_id,))
-    debts = cursor.fetchall()
-    conn.close()
-    return debts
-
+    try:
+        debts_ref = db.collection('debts').where('event_fk', '==', event_id).stream()
+        debts = [debt.to_dict() for debt in debts_ref]
+        return debts
+    except Exception as e:
+        print(f"Ошибка при получении долгов: {str(e)}")
+        return []
 
 def get_debts_by_user_id_event_id(user_id, event_id):
-    conn = sqlite3.connect(debts_db)
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM debts WHERE event_fk = ? AND debtors_id = ?", (event_id, user_id))
-    debtor = cursor.fetchall()
-    conn.close()
-    return debtor
-
-
+    try:
+        debts_ref = db.collection('debts').where('event_fk', '==', event_id).where('debtor_id', '==', user_id).stream()
+        debtor = [debt.to_dict() for debt in debts_ref]
+        return debtor
+    except Exception as e:
+        print(f"Ошибка при получении долгов по пользователю: {str(e)}")
+        return []
 
 def get_creditors_by_user_id_event_id(user_id, event_id):
-    conn = sqlite3.connect(debts_db)
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM debts WHERE event_fk = ? AND creditors_id = ?", (event_id, user_id))
-    debtor = cursor.fetchall()
-    conn.close()
-    return debtor
+    try:
+        creditors_ref = db.collection('debts').where('event_fk', '==', event_id).where('creditor_id', '==', user_id).stream()
+        creditor = [debt.to_dict() for debt in creditors_ref]
+        return creditor
+    except Exception as e:
+        print(f"Ошибка при получении кредиторов: {str(e)}")
+        return []
 
-create_debts_db()
+create_debts_collection()

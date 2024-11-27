@@ -1,75 +1,82 @@
 import json
-import sqlite3
-from loaderof_db import users_db
-def create_users_db():
-    conn = sqlite3.connect(users_db)
-    cursor = conn.cursor()
-    cursor.execute('''CREATE TABLE IF NOT EXISTS users (
-                        users_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        username TEXT NOT NULL UNIQUE,
-                        phone_number NOT NULL,
-                        card_number DEFAULT NULL,
-                        event_list TEXT
-                     )''')
-    conn.commit()
-    conn.close()
+import firebase_admin
+from firebase_admin import credentials, firestore
 
+# Инициализация Firebase
+cred = credentials.Certificate("splitpaysplitergroup-firebase-adminsdk-fp08h-3551a8a3cb.json")
+firebase_admin.initialize_app(cred)
+
+# Инициализация Firestore
+db = firestore.client()
+
+def create_users_db():
+    # Firestore автоматически создает коллекции при добавлении документов,
+    # поэтому здесь нет необходимости явно создавать базу данных.
+    pass
 
 def user_register(username, phone_number, card_number=None):
-    conn = sqlite3.connect(users_db)
-    cursor = conn.cursor()
+    user_data = {
+        "username": username,
+        "phone_number": phone_number,
+        "card_number": card_number,
+        "event_list": []
+    }
+    
     try:
-        cursor.execute('''INSERT INTO users (username, phone_number, card_number, event_list)
-                          VALUES (?, ?, ?, ?, ?)''', (username, phone_number, card_number, []))
-        conn.commit()
+        db.collection('users').add(user_data)
         print("User registered successfully.")
-    except sqlite3.IntegrityError as e:
+    except Exception as e:
         print(f"Error: {e}")
-    finally:
-        conn.close()
-
-
 
 def get_event_list(user_id):
-    conn = sqlite3.connect(users_db)
-    cursor = conn.cursor()
-    cursor.execute('''SELECT event_list FROM users WHERE user_id = ?''', (user_id))
-    event_list = cursor.fetchone()
-    conn.close()
-    return event_list
-
+    try:
+        user_ref = db.collection('users').document(user_id)
+        user_doc = user_ref.get()
+        
+        if user_doc.exists:
+            return user_doc.to_dict().get('event_list', [])
+        else:
+            print("User not found.")
+            return []
+    except Exception as e:
+        print(f"Error fetching event list: {e}")
+        return []
 
 def add_event(user_id, new_event):
-
-    event_list = json.loads(get_event_list(user_id))
+    event_list = get_event_list(user_id)
     event_list.append(new_event)
+    
+    try:
+        user_ref = db.collection('users').document(user_id)
+        user_ref.update({"event_list": event_list})
+    except Exception as e:
+        print(f"Error updating event list: {e}")
 
-    conn = sqlite3.connect(users_db)
-    cursor = conn.cursor()
-    cursor.execute('''UPDATE event SET event_list = ? WHERE user_id = ?''', (event_list, user_id))
-    conn.commit()
-    conn.close()
-
-create_users_db()
-
-
-def take_id_by_phonenumber(phonenumber):
-    conn = sqlite3.connect(phonenumber)
-    cursor = conn.cursor()
-    cursor.execute('''SELECT id FROM Events WHERE users_id = ?''', (phonenumber))
-    q = cursor.fetchone()
-    conn.commit()
-    conn.close()
-    return q
-
+def take_id_by_phonenumber(phone_number):
+    try:
+        users_ref = db.collection('users')
+        query = users_ref.where('phone_number', '==', phone_number).limit(1).get()
+        
+        if query:
+            return query[0].id  # Возвращаем ID первого найденного пользователя
+        else:
+            print("User not found.")
+            return None
+    except Exception as e:
+        print(f"Error fetching user by phone number: {e}")
+        return None
 
 def user_login(username):
-    conn = sqlite3.connect(users_db)
-    cursor = conn.cursor()
     try:
-        cursor.execute('''SELECT username FROM users WHERE username = ?''', (username))
-    except Exception:
-        return "Пользователь с таким ником уже существует"
-    conn.close()
+        users_ref = db.collection('users')
+        query = users_ref.where('username', '==', username).limit(1).get()
+        
+        if query:
+            return "User logged in successfully."
+        else:
+            return "User not found."
+    except Exception as e:
+        print(f"Error during login: {e}")
+        return "An error occurred."
 
 create_users_db()
