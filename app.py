@@ -3,6 +3,21 @@ from starlette.responses import JSONResponse
 import firebase_admin
 from firebase_admin import credentials, firestore
 import uvicorn
+import json
+import debts_db 
+import users_db 
+import event_db 
+from . import utils 
+from pydantic import BaseModel
+
+app = FastAPI()
+
+# Модель запроса
+class DebtRequest(BaseModel):
+    debtor_id: str
+    amount: float
+    event_id: str
+    creditor_id: str  # Добавляем creditor_id
 
 # Инициализация Firebase
 cred = credentials.Certificate("splitpaysplitergroup-firebase-adminsdk-fp08h-3551a8a3cb.json")

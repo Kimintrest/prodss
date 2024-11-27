@@ -1,3 +1,3 @@
-debts_db = "path-to-file"
-event_db = "path-to-file"
-users_db = "path-to-file"
+debts_db = "prodss\debts_db.py"
+event_db = "prodss\event_db.py"
+users_db = "prodss\users_db.py"
